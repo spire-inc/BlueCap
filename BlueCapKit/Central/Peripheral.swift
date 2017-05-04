@@ -171,6 +171,10 @@ public class Peripheral: NSObject, CBPeripheralDelegate {
         return cbPeripheral.state
     }
 
+    public var corePeripheral: CBPeripheral {
+        return cbPeripheral as! CBPeripheral
+    }
+
     // MARK: Initializers
 
     internal init(cbPeripheral: CBPeripheralInjectable, centralManager: CentralManager, advertisements: [String : Any], RSSI: Int, profileManager: ProfileManager? = nil) {
