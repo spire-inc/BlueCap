@@ -142,7 +142,7 @@ scanFuture.onFailure { [weak manager] error in
     }
     switch appError {
     case .invalidState:
-	      break
+	break
     case .resetting:
         manager?.reset()
     case .poweredOff:
@@ -186,7 +186,7 @@ public enum AppError : Error {
 }
 
 let discoveryFuture = connectionFuture.flatMap { [weak peripheral] () -> Future<Void> in
-	  guard let peripheral = peripheral else {
+    guard let peripheral = peripheral else {
         throw AppError.unlikely
     }
     return peripheral.discoverServices([serviceUUID])
@@ -204,7 +204,7 @@ discoveryFuture.onFailure { [weak peripheral] error in
     case AppError.serviceNotFound:
         break
     default:
-		    break
+	break
     }
 }
 ```
@@ -253,9 +253,9 @@ dataUpdateFuture.onFailure { [weak peripheral] error in
     case AppError.serviceNotFound:
         break
     case AppError.dataCharactertisticNotFound:
-		     break
+	break
     default:
-		    break
+	break
     }
 }
 ```
@@ -329,7 +329,7 @@ startAdvertiseFuture.onFailure { [weak manager] error in
     case AppError.resetting:
         manager?.reset()
     default:
-	      break
+	break
     }
     manager?.stopAdvertising()
 }
