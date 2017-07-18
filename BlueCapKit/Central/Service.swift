@@ -24,11 +24,11 @@ public class Service {
     }
 
     var discoveredCharacteristics = [CBUUID : [Characteristic]]()
-    
+
     public var characteristics: [Characteristic] {
         return centralQueue.sync { Array(self.discoveredCharacteristics.values).flatMap { $0 } }
     }
-    
+
     fileprivate(set) weak var profile: ServiceProfile?
     fileprivate(set) weak var cbService: CBServiceInjectable?
     public fileprivate(set) weak var peripheral: Peripheral?
@@ -52,12 +52,12 @@ public class Service {
         Logger.debug("uuid=\(uuid.uuidString), name=\(self.name)")
         return self.discoverIfConnected(nil, timeout: timeout)
     }
-    
+
     public func discoverCharacteristics(_ characteristics: [CBUUID], timeout: TimeInterval = TimeInterval.infinity) -> Future<Void> {
         Logger.debug("uuid=\(uuid.uuidString), name=\(self.name)")
         return self.discoverIfConnected(characteristics, timeout: timeout)
     }
-    
+
     public func characteristics(withUUID uuid: CBUUID) -> [Characteristic]? {
         return centralQueue.sync { self.discoveredCharacteristics[uuid] }
     }
@@ -135,3 +135,4 @@ public class Service {
     }
 
 }
+

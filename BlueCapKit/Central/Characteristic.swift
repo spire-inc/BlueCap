@@ -56,35 +56,35 @@ public class Characteristic : NSObject {
     }
 
     public let uuid: CBUUID
-    
+
     public var name: String {
         return profile?.name ?? "Unknown"
     }
-    
+
     public var isNotifying: Bool {
         return cbCharacteristic?.isNotifying ?? false
     }
-    
+
     public var canNotify: Bool {
         return propertyEnabled(.notify) || propertyEnabled(.indicate) || propertyEnabled(.notifyEncryptionRequired) || propertyEnabled(.indicateEncryptionRequired)
     }
-    
+
     public var canRead: Bool {
         return propertyEnabled(.read)
     }
-    
+
     public var canWrite: Bool {
         return propertyEnabled(.write) || self.propertyEnabled(.writeWithoutResponse)
     }
-    
+
     public var service: Service? {
         return self._service
     }
-    
+
     public var dataValue: Data? {
         return cbCharacteristic?.value
     }
-    
+
     public var stringValues: [String] {
         return profile?.stringValues ?? []
     }
@@ -92,7 +92,7 @@ public class Characteristic : NSObject {
     public var stringValue: [String : String]? {
         return stringValue(dataValue)
     }
-    
+
     public var properties: CBCharacteristicProperties {
         return cbCharacteristic?.properties ?? []
     }
@@ -116,14 +116,14 @@ public class Characteristic : NSObject {
         }
         return profile?.stringValue(data) ?? CharacteristicProfile(uuid: uuidString).stringValue(data)
     }
-    
+
     public func data(fromString stringValue: [String : String]) -> Data? {
         guard let uuidString = cbCharacteristic?.uuid.uuidString else {
             return nil
         }
         return profile?.data(fromString: stringValue) ?? CharacteristicProfile(uuid: uuidString).data(fromString: stringValue)
     }
-    
+
     public func propertyEnabled(_ property: CBCharacteristicProperties) -> Bool {
         return (self.properties.rawValue & property.rawValue) > 0
     }
@@ -215,7 +215,7 @@ public class Characteristic : NSObject {
             return self.notificationUpdatePromise!.stream
         }
     }
-    
+
     public func stopNotificationUpdates() {
         self.notificationUpdatePromise = nil
     }
@@ -269,7 +269,7 @@ public class Characteristic : NSObject {
     public func write<T: Deserializable>(_ value: T, timeout: TimeInterval = TimeInterval.infinity, type: CBCharacteristicWriteType = .withResponse) -> Future<Void> {
         return write(data: SerDe.serialize(value), timeout: timeout, type: type)
     }
-    
+
     public func write<T: RawDeserializable>(_ value: T, timeout: TimeInterval = TimeInterval.infinity, type: CBCharacteristicWriteType = .withResponse) -> Future<Void> {
         return write(data: SerDe.serialize(value), timeout: timeout, type: type)
     }
@@ -281,7 +281,7 @@ public class Characteristic : NSObject {
     public func write<T: RawPairDeserializable>(_ value: T, timeout: TimeInterval = TimeInterval.infinity, type: CBCharacteristicWriteType = .withResponse) -> Future<Void> {
         return write(data: SerDe.serialize(value), timeout: timeout, type: type)
     }
-    
+
     public func write<T: RawArrayPairDeserializable>(_ value: T, timeout: TimeInterval = TimeInterval.infinity, type: CBCharacteristicWriteType = .withResponse) -> Future<Void> {
         return write(data: SerDe.serialize(value), timeout: timeout, type: type)
     }
@@ -296,12 +296,12 @@ public class Characteristic : NSObject {
             notificationStateChangedPromise?.success()
         }
     }
-    
+
     internal func didUpdate(_ error: Swift.Error?) {
         didNotify(error)
         didRead(error)
     }
-    
+
     internal func didWrite(_ error: Swift.Error?) {
         guard let promise = shiftPromise(&writePromises) , !promise.completed else {
             return
@@ -358,7 +358,7 @@ public class Characteristic : NSObject {
             }
         }
     }
-    
+
     fileprivate func timeoutWrite(_ sequence: Int, timeout: TimeInterval) {
         guard timeout < TimeInterval.infinity else {
             return
@@ -380,11 +380,11 @@ public class Characteristic : NSObject {
     fileprivate func setNotifyValue(_ state: Bool, cbCharacteristic: CBCharacteristicInjectable) {
         service?.peripheral?.setNotifyValue(state, forCharacteristic: cbCharacteristic)
     }
-    
+
     fileprivate func readValueForCharacteristic(_ cbCharacteristic: CBCharacteristicInjectable) {
         service?.peripheral?.readValueForCharacteristic(cbCharacteristic)
     }
-    
+
     fileprivate func writeValue(_ value: Data, cbCharacteristic: CBCharacteristicInjectable, type: CBCharacteristicWriteType = .withResponse) {
         service?.peripheral?.writeValue(value, forCharacteristic: cbCharacteristic, type: type)
     }
@@ -401,7 +401,7 @@ public class Characteristic : NSObject {
         writeSequence += 1
         timeoutWrite(self.writeSequence, timeout: parameters.timeout)
     }
-    
+
     fileprivate func readNext() {
         guard let parameters = readParameters.first, let cbCharacteristic = cbCharacteristic, !reading else {
             return
@@ -413,7 +413,7 @@ public class Characteristic : NSObject {
         readSequence += 1
         timeoutRead(self.readSequence, timeout: parameters.timeout)
     }
-    
+
     fileprivate func shiftPromise(_ promises: inout [Promise<Void>]) -> Promise<Void>? {
         if let _ = promises.first {
             return promises.remove(at :0)
@@ -423,3 +423,4 @@ public class Characteristic : NSObject {
     }
 
 }
+

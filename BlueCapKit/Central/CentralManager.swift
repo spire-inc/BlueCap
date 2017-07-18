@@ -50,6 +50,8 @@ public class CentralManager : NSObject, CBCentralManagerDelegate {
         }
     }
 
+    public var restored: Bool = false
+
     public var services: [Service] {
         return peripherals.map { $0.services }.flatMap { $0 }
     }
@@ -229,8 +231,18 @@ public class CentralManager : NSObject, CBCentralManagerDelegate {
 
     public func whenStateRestored() -> Future<Void> {
         return centralQueue.sync {
-            if let afterStateRestoredPromise = self.afterStateRestoredPromise, !afterStateRestoredPromise.completed {
-                return afterStateRestoredPromise.future
+            if let afterStateRestoredPromise = self.afterStateRestoredPromise {
+                NSLog("State restore exists")
+                if afterStateRestoredPromise.completed {
+                    if self.restored {
+                        NSLog("State restore success")
+                        afterStateRestoredPromise.success()
+                    } else {
+                        afterStateRestoredPromise.failure(CentralManagerError.restoreFailed)
+                    }
+                } else {
+                    return afterStateRestoredPromise.future
+                }
             }
             self.afterStateRestoredPromise = Promise<Void>()
             return self.afterStateRestoredPromise!.future
@@ -288,6 +300,7 @@ public class CentralManager : NSObject, CBCentralManagerDelegate {
     }
 
     public func centralManager(_ central: CBCentralManager, willRestoreState dict: [String : Any]) {
+        NSLog("Restoring CB State: \(dict)")
         var injectablePeripherals: [CBPeripheralInjectable]?
         if let cbPeripherals: [CBPeripheral] = dict[CBCentralManagerRestoredStatePeripheralsKey] as? [CBPeripheral] {
             injectablePeripherals = cbPeripherals.map { $0 as CBPeripheralInjectable }
@@ -348,13 +361,13 @@ public class CentralManager : NSObject, CBCentralManagerDelegate {
     func willRestoreState(_ cbPeripherals: [CBPeripheralInjectable]?, scannedServices: [CBUUID]?, scanOptions: [String: AnyObject]?) {
         Logger.debug("'\(name)'")
         if let cbPeripherals = cbPeripherals {
-            if let options = scanOptions {
-                self.options = options
-            }
+            restored = true
             cbPeripherals.forEach { cbPeripheral in
                 let peripheral = Peripheral(cbPeripheral: cbPeripheral, centralManager: self)
                 _discoveredPeripherals[cbPeripheral.identifier] = peripheral
+                NSLog("Discovered Peripheral: \(peripheral)")
                 if let cbServices = cbPeripheral.getServices() {
+                    NSLog("Got Services: \(cbServices)")
                     for cbService in cbServices {
                         let service = Service(cbService: cbService, peripheral: peripheral)
                         if let services = peripheral.discoveredServices[cbService.uuid] {
@@ -363,6 +376,7 @@ public class CentralManager : NSObject, CBCentralManagerDelegate {
                             peripheral.discoveredServices[cbService.uuid] = [service]
                         }
                         if let cbCharacteristics = cbService.getCharacteristics() {
+                            NSLog("Got Characteristics: \(cbCharacteristics)")
                             for cbCharacteristic in cbCharacteristics {
                                 let characteristic = Characteristic(cbCharacteristic: cbCharacteristic, service: service)
                                 if let characteristics = service.discoveredCharacteristics[cbCharacteristic.uuid] {
@@ -371,14 +385,20 @@ public class CentralManager : NSObject, CBCentralManagerDelegate {
                                     service.discoveredCharacteristics[cbCharacteristic.uuid] = [characteristic]
                                 }
                             }
+                        } else {
+                            NSLog("Failed to discover characteristics for service: \(cbService)")
                         }
                     }
+                } else {
+                    NSLog("Failed to discover services for peripheral: \(cbPeripheral)")
                 }
             }
             if let completed = afterStateRestoredPromise?.completed, !completed {
                 afterStateRestoredPromise?.success()
             }
         } else {
+            NSLog("No peripherals found")
+            restored = false
             if let completed = afterStateRestoredPromise?.completed, !completed {
                 afterStateRestoredPromise?.failure(CentralManagerError.restoreFailed)
             }
@@ -391,4 +411,3 @@ public class CentralManager : NSObject, CBCentralManagerDelegate {
     }
 
 }
-
