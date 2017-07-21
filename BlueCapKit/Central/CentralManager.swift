@@ -306,7 +306,7 @@ public class CentralManager : NSObject, CBCentralManagerDelegate {
             injectablePeripherals = cbPeripherals.map { $0 as CBPeripheralInjectable }
         }
         let scannedServices = dict[CBCentralManagerRestoredStateScanServicesKey] as? [CBUUID]
-        let scanOptions = dict[CBCentralManagerRestoredStateScanOptionsKey] as? [String: AnyObject]
+        let scanOptions = dict[CBCentralManagerRestoredStateScanOptionsKey] as? [String : Any]
         willRestoreState(injectablePeripherals, scannedServices: scannedServices, scanOptions: scanOptions)
     }
 
@@ -356,12 +356,9 @@ public class CentralManager : NSObject, CBCentralManagerDelegate {
         bcPeripheral.didFailToConnectPeripheral(error)
     }
 
-
-
-    func willRestoreState(_ cbPeripherals: [CBPeripheralInjectable]?, scannedServices: [CBUUID]?, scanOptions: [String: AnyObject]?) {
+    func willRestoreState(_ cbPeripherals: [CBPeripheralInjectable]?, scannedServices: [CBUUID]?, scanOptions: [String: Any]?) {
         Logger.debug("'\(name)'")
         if let cbPeripherals = cbPeripherals {
-            restored = true
             cbPeripherals.forEach { cbPeripheral in
                 let peripheral = Peripheral(cbPeripheral: cbPeripheral, centralManager: self)
                 _discoveredPeripherals[cbPeripheral.identifier] = peripheral
