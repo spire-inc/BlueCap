@@ -50,8 +50,6 @@ public class CentralManager : NSObject, CBCentralManagerDelegate {
         }
     }
 
-    public var restored: Bool = false
-
     public var services: [Service] {
         return peripherals.map { $0.services }.flatMap { $0 }
     }
@@ -231,18 +229,8 @@ public class CentralManager : NSObject, CBCentralManagerDelegate {
 
     public func whenStateRestored() -> Future<Void> {
         return centralQueue.sync {
-            if let afterStateRestoredPromise = self.afterStateRestoredPromise {
-                NSLog("State restore exists")
-                if afterStateRestoredPromise.completed {
-                    if self.restored {
-                        NSLog("State restore success")
-                        afterStateRestoredPromise.success()
-                    } else {
-                        afterStateRestoredPromise.failure(CentralManagerError.restoreFailed)
-                    }
-                } else {
-                    return afterStateRestoredPromise.future
-                }
+            if let afterStateRestoredPromise = self.afterStateRestoredPromise, !afterStateRestoredPromise.completed {
+                return afterStateRestoredPromise.future
             }
             self.afterStateRestoredPromise = Promise<Void>()
             return self.afterStateRestoredPromise!.future
@@ -395,7 +383,6 @@ public class CentralManager : NSObject, CBCentralManagerDelegate {
             }
         } else {
             NSLog("No peripherals found")
-            restored = false
             if let completed = afterStateRestoredPromise?.completed, !completed {
                 afterStateRestoredPromise?.failure(CentralManagerError.restoreFailed)
             }
