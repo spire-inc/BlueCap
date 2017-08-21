@@ -72,12 +72,12 @@ extension CBCentralManager : CBCentralManagerInjectable {
 
     func retrieveConnectedPeripherals(withServices serviceUUIDs: [CBUUID]) -> [CBPeripheralInjectable] {
         let peripherals = self.retrieveConnectedPeripherals(withServices: serviceUUIDs) as [CBPeripheral]
-        return  peripherals.map { $0 as CBPeripheralInjectable }
+        return peripherals.map { $0 as CBPeripheralInjectable }
     }
 
     func retrievePeripherals(withIdentifiers identifiers: [UUID]) -> [CBPeripheralInjectable] {
         let peripherals = self.retrievePeripherals(withIdentifiers: identifiers) as [CBPeripheral]
-        return  peripherals.map { $0 as CBPeripheralInjectable }
+        return peripherals.map { $0 as CBPeripheralInjectable }
     }
 }
 
@@ -117,7 +117,7 @@ extension CBPeripheral: CBPeripheralInjectable {
     }
 
     func getServices() -> [CBServiceInjectable]? {
-        guard let services = services else { NSLog("No CBServices"); return nil }
+        guard let services = self.services else { NSLog("No CBServices"); return nil }
         return services.map{ $0 as CBServiceInjectable }
     }
     

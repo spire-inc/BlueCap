@@ -289,13 +289,12 @@ public class CentralManager : NSObject, CBCentralManagerDelegate {
 
     public func centralManager(_ central: CBCentralManager, willRestoreState dict: [String : Any]) {
         NSLog("Restoring CB State: \(dict)")
-        var injectablePeripherals: [CBPeripheralInjectable]?
-        if let cbPeripherals: [CBPeripheral] = dict[CBCentralManagerRestoredStatePeripheralsKey] as? [CBPeripheral] {
-            injectablePeripherals = cbPeripherals.map { $0 as CBPeripheralInjectable }
-        }
+        self.cbCentralManager = central
+        self.cbCentralManager.delegate = self
+        let cbPeripherals: [CBPeripheral]? = dict[CBCentralManagerRestoredStatePeripheralsKey] as? [CBPeripheral]
         let scannedServices = dict[CBCentralManagerRestoredStateScanServicesKey] as? [CBUUID]
         let scanOptions = dict[CBCentralManagerRestoredStateScanOptionsKey] as? [String : Any]
-        willRestoreState(injectablePeripherals, scannedServices: scannedServices, scanOptions: scanOptions)
+        willRestoreState(cbPeripherals, scannedServices: scannedServices, scanOptions: scanOptions)
     }
 
     public func centralManagerDidUpdateState(_ central: CBCentralManager) {
