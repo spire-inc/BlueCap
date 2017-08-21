@@ -277,6 +277,9 @@ public class Peripheral: NSObject, CBPeripheralDelegate {
 
     fileprivate func reconnectIfNotConnected(_ delay: Double = 0.0) {
         NSLog("\(self) state = \(self._state.rawValue). Connecting to Peripheral \(self.cbPeripheral.name). Delegate = \(self.cbPeripheral.delegate)")
+        if self.cbPeripheral.delegate == nil {
+            self.cbPeripheral.delegate = self
+        }
         guard let centralManager = centralManager, _state != .connected else {
             Logger.debug("peripheral not disconnected \(name), \(identifier.uuidString)")
             return
