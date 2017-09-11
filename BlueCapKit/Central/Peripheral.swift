@@ -94,6 +94,10 @@ public class Peripheral: NSObject, CBPeripheralDelegate {
 
     let cbPeripheral: CBPeripheralInjectable
     
+    public var corePeripheral: CBPeripheral {
+        return self.cbPeripheral as! CBPeripheral
+    }
+    
     public private(set) var advertisements: PeripheralAdvertisements
     public let discoveredAt = Date()
 
