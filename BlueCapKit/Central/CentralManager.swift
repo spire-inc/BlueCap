@@ -244,7 +244,7 @@ public class CentralManager : NSObject, CBCentralManagerDelegate {
 
     public func retrieveConnectedPeripherals(withServices services: [CBUUID]) -> [Peripheral] {
         return centralQueue.sync {
-            return self.cbCentralManager.retrieveConnectedPeripherals(withServices: services).map(self.loadRetrievedPeripheral)
+            return self.cbCentralManager.retrieveConnectedPeripherals(withServices: services).map(self.loadConnectedPeripheral)
         }
     }
 
@@ -257,6 +257,19 @@ public class CentralManager : NSObject, CBCentralManagerDelegate {
     public func retrievePeripherals() -> [Peripheral] {
         let identifiers = Array(discoveredPeripherals.keys)
         return retrievePeripherals(withIdentifiers: identifiers)
+    }
+
+    private func loadConnectedPeripheral(_ peripheral: CBPeripheralInjectable) -> Peripheral {
+        let newBCPeripheral: Peripheral
+        if let oldBCPeripheral = _discoveredPeripherals[peripheral.identifier] {
+            newBCPeripheral = Peripheral(cbPeripheral: peripheral, bcPeripheral: oldBCPeripheral, profileManager: profileManager)
+        } else {
+            newBCPeripheral = Peripheral(cbPeripheral: peripheral, centralManager: self, profileManager: profileManager)
+        }
+        Logger.debug("'\(name)' uuid=\(newBCPeripheral.identifier.uuidString), name=\(newBCPeripheral.name)")
+        self._discoveredPeripherals[peripheral.identifier] = newBCPeripheral
+        self.connect(peripheral, options: nil)
+        return newBCPeripheral
     }
 
     private func loadRetrievedPeripheral(_ peripheral: CBPeripheralInjectable) -> Peripheral {
@@ -302,14 +315,6 @@ public class CentralManager : NSObject, CBCentralManagerDelegate {
     }
 
     public func centralManagerDidUpdateState(_ central: CBCentralManager) {
-        // If there are connected peripherals restored and CentralManager is poweredOn for the first time, we tell it to connect to pull the peripheral from the system
-        if restoredConnectedPeripherals.count > 0, restored, central.state == .poweredOn {
-            NSLog("Restoring system connected peripherals")
-            restored = false
-            for (_, cbPeripheral) in restoredConnectedPeripherals {
-                central.connect(cbPeripheral, options: nil)
-            }
-        }
         didUpdateState(central)
     }
 
