@@ -32,7 +32,7 @@ public class CentralManager : NSObject, CBCentralManagerDelegate {
 
     fileprivate var scanTimeoutSequence = 0
 
-    fileprivate var restoredConnectedPeripherals = [CBPeripheralInjectable]()
+    fileprivate var restoredConnectedPeripherals = [UUID:CBPeripheralInjectable]()
     var _discoveredPeripherals = [UUID : Peripheral]()
     public var discoveredPeripherals : [UUID : Peripheral] {
         return centralQueue.sync { self._discoveredPeripherals }
@@ -304,15 +304,10 @@ public class CentralManager : NSObject, CBCentralManagerDelegate {
     public func centralManagerDidUpdateState(_ central: CBCentralManager) {
         // If there are connected peripherals restored and CentralManager is poweredOn for the first time, we tell it to connect to pull the peripheral from the system
         if restoredConnectedPeripherals.count > 0, restored, central.state == .poweredOn {
+            NSLog("Restoring system connected peripherals")
             restored = false
-            for cbPeripheral in restoredConnectedPeripherals {
+            for (_, cbPeripheral) in restoredConnectedPeripherals {
                 central.connect(cbPeripheral, options: nil)
-                self.restoreServicesCharacteristics(cbPeripheral)
-            }
-
-            // Resolve the future after we've gotten the ones connected to the system
-            if let completed = afterStateRestoredPromise?.completed, !completed {
-                 afterStateRestoredPromise?.success()
             }
         }
         didUpdateState(central)
@@ -322,6 +317,14 @@ public class CentralManager : NSObject, CBCentralManagerDelegate {
 
     func didConnectPeripheral(_ peripheral: CBPeripheralInjectable) {
         Logger.debug("'\(name)' uuid=\(peripheral.identifier.uuidString), name=\(String(describing: peripheral.name))")
+        if restoredConnectedPeripherals[peripheral.identifier] === peripheral, restoredConnectedPeripherals.count > 0 {
+            self.restoreServicesCharacteristics(peripheral)
+            restoredConnectedPeripherals.removeValue(forKey: peripheral.identifier)
+            if restoredConnectedPeripherals.count == 0, let completed = afterStateRestoredPromise?.completed, !completed {
+                afterStateRestoredPromise?.success()
+            }
+        }
+
         if let bcPeripheral = _discoveredPeripherals[peripheral.identifier] {
             bcPeripheral.didConnectPeripheral()
         }
@@ -385,10 +388,12 @@ public class CentralManager : NSObject, CBCentralManagerDelegate {
                     }
                 } else {
                     NSLog("Failed to discover characteristics for service: \(cbService)")
+
                 }
             }
         } else {
             NSLog("Failed to discover services for peripheral: \(cbPeripheral)")
+            dump(cbPeripheral)
         }
     }
 
@@ -398,8 +403,9 @@ public class CentralManager : NSObject, CBCentralManagerDelegate {
             restored = true
             cbPeripherals.forEach { cbPeripheral in
                 if cbPeripheral.state == .connected || cbPeripheral.state == .connecting {
+                    NSLog("CBPeripheral \(cbPeripheral) is connected or connecting>")
                     // If the CBPeripheral is already connected when restoring, we need to call CBCentralManager.connect when BLE powers on to grab it from the system to app. Otherwise, the service and characteristic restoration will fail.
-                    restoredConnectedPeripherals.append(cbPeripheral)
+                    restoredConnectedPeripherals[cbPeripheral.identifier] = cbPeripheral
                 } else {
                     self.restoreServicesCharacteristics(cbPeripheral)
                 }
