@@ -127,8 +127,9 @@ public class CentralManager : NSObject, CBCentralManagerDelegate {
 
     public func whenStateChanges() -> FutureStream<ManagerState> {
         return self.centralQueue.sync {
-            self.afterStateChangedPromise = StreamPromise<ManagerState>()
-            self.afterStateChangedPromise?.success(self.cbCentralManager.managerState)
+            if self.afterStateChangedPromise == nil {
+                self.afterStateChangedPromise = StreamPromise<ManagerState>()
+            }
             return self.afterStateChangedPromise!.stream
         }
     }
@@ -385,6 +386,9 @@ public class CentralManager : NSObject, CBCentralManagerDelegate {
 
     func didUpdateState(_ centralManager: CBCentralManagerInjectable) {
         Logger.debug("'\(name)' did update state '\(centralManager.managerState)'")
+        if afterStateChangedPromise == nil {
+            afterStateChangedPromise = StreamPromise<ManagerState>()
+        }
         afterStateChangedPromise?.success(centralManager.managerState)
     }
 
