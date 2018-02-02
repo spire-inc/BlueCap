@@ -98,7 +98,7 @@ public class Peripheral: NSObject, CBPeripheralDelegate {
         return self.cbPeripheral as! CBPeripheral
     }
     
-    public private(set) var advertisements: PeripheralAdvertisements
+    public internal(set) var advertisements: PeripheralAdvertisements
     public let discoveredAt = Date()
 
     // MARK: Private Properties
@@ -278,7 +278,7 @@ public class Peripheral: NSObject, CBPeripheralDelegate {
     }
 
     fileprivate func reconnectIfNotConnected(_ delay: Double = 0.0) {
-        guard let centralManager = centralManager, state != .connected  else {
+        guard let centralManager = centralManager else {
             Logger.debug("peripheral not disconnected \(name), \(identifier.uuidString)")
             return
         }

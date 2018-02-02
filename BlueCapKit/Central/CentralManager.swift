@@ -324,6 +324,7 @@ public class CentralManager : NSObject, CBCentralManagerDelegate {
             bcPeripheral = discoveredPeripheral
             if bcPeripheral.cbPeripheral === peripheral {
                 bcPeripheral._RSSI = RSSI.intValue
+                bcPeripheral.advertisements = PeripheralAdvertisements(advertisements: advertisementData)
                 afterPeripheralDiscoveredPromise?.success(bcPeripheral)
             } else {
                 afterPeripheralDiscoveredPromise?.failure(CentralManagerError.invalidPeripheral)
