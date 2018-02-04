@@ -142,6 +142,7 @@ public protocol CBCharacteristicInjectable: class {
     var value: Data? { get }
     var properties: CBCharacteristicProperties { get }
     var isNotifying: Bool { get }
+    var service: CBService { get }
 }
 
 extension CBCharacteristic : CBCharacteristicInjectable {}
@@ -214,7 +215,6 @@ protocol CBMutableCharacteristicInjectable: CBCharacteristicInjectable {
 }
 
 extension CBMutableCharacteristic : CBMutableCharacteristicInjectable {}
-
 
 // MARK: - CBATTRequestInjectable -
 public protocol CBATTRequestInjectable {

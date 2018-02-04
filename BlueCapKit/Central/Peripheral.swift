@@ -91,6 +91,7 @@ public class Peripheral: NSObject, CBPeripheralDelegate {
     }
 
     var discoveredServices = [CBUUID : [Service]]()
+    var subscribedCharacteristics = [CBUUID: Characteristic]()
 
     let cbPeripheral: CBPeripheralInjectable
     
@@ -282,10 +283,7 @@ public class Peripheral: NSObject, CBPeripheralDelegate {
             Logger.debug("peripheral not disconnected \(name), \(identifier.uuidString)")
             return
         }
-        guard !(cbPeripheral.delegate === self && cbPeripheral.state == .connected) else {
-            Logger.debug("cbPeripheral belongs to \(name), \(identifier.uuidString) and it's already connected")
-            return
-        }
+
         cbPeripheral.delegate = self
         Logger.debug("reconnect peripheral name=\(name), uuid=\(identifier.uuidString)")
         func performConnection(_ peripheral: Peripheral) {
@@ -423,7 +421,9 @@ public class Peripheral: NSObject, CBPeripheralDelegate {
     
     internal func didUpdateNotificationStateForCharacteristic(_ characteristic: CBCharacteristicInjectable, error: Error?) {
         guard let bcCharacteristic = characteristicWithCBCharacteristic(characteristic) else {
-            Logger.debug("characteristic not found uuid=\(characteristic.uuid.uuidString)")
+            Logger.debug("didUpdateNotificationState error: characteristic not found uuid=\(characteristic.uuid.uuidString)")
+            let bcCharacteristic: Characteristic = restore(cbCharacteristic: characteristic)
+            bcCharacteristic.didUpdateNotificationState(error)
             return
         }
         Logger.debug("uuid=\(characteristic.uuid.uuidString), name=\(bcCharacteristic.name)")
@@ -432,7 +432,9 @@ public class Peripheral: NSObject, CBPeripheralDelegate {
     
     internal func didUpdateValueForCharacteristic(_ characteristic: CBCharacteristicInjectable, error: Error?) {
         guard let bcCharacteristic = characteristicWithCBCharacteristic(characteristic) else {
-            Logger.debug("characteristic not found uuid=\(characteristic.uuid.uuidString)")
+            Logger.debug("\(self.identifier.uuidString) didUpdateValue error: characteristic not found uuid=\(characteristic.uuid.uuidString). Restoring.")
+            let bcCharacteristic: Characteristic = restore(cbCharacteristic: characteristic)
+            bcCharacteristic.didUpdate(error)
             return
         }
         Logger.debug("uuid=\(characteristic.uuid.uuidString), name=\(bcCharacteristic.name)")
@@ -441,7 +443,9 @@ public class Peripheral: NSObject, CBPeripheralDelegate {
 
     internal func didWriteValueForCharacteristic(_ characteristic: CBCharacteristicInjectable, error: Error?) {
         guard let bcCharacteristic = characteristicWithCBCharacteristic(characteristic) else {
-            Logger.debug("characteristic not found uuid=\(characteristic.uuid.uuidString)")
+            Logger.debug("didWriteValue error: characteristic not found uuid=\(characteristic.uuid.uuidString)")
+            let bcCharacteristic: Characteristic = restore(cbCharacteristic: characteristic)
+            bcCharacteristic.didWrite(error)
             return
         }
         Logger.debug("uuid=\(characteristic.uuid.uuidString), name=\(bcCharacteristic.name)")
@@ -531,6 +535,15 @@ public class Peripheral: NSObject, CBPeripheralDelegate {
     }
 
     // MARK: Utilities
+
+    private func restore(cbCharacteristic: CBCharacteristicInjectable) -> Characteristic {
+        let service = Service(cbService: cbCharacteristic.service, peripheral: self)
+        let characteristic = Characteristic(cbCharacteristic: cbCharacteristic, service: service)
+        service.discoveredCharacteristics[characteristic.uuid]?.append(characteristic)
+        subscribedCharacteristics[characteristic.uuid] = characteristic
+        discoveredServices[service.uuid]?.append(service)
+        return characteristic
+    }
 
     fileprivate func serviceWithCBService(_ cbService: CBServiceInjectable) -> Service? {
         return Array(self.discoveredServices.values).flatMap { $0 }.filter { $0.cbService === cbService }.first
