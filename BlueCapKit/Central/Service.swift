@@ -77,7 +77,7 @@ public class Service {
         } else {
             characteristics.forEach { cbCharacteristic in
                 let bcCharacteristic = Characteristic(cbCharacteristic: cbCharacteristic, service: self)
-                Logger.debug("Discovered characterisc uuid=\(cbCharacteristic.uuid.uuidString), characteristic name=\(bcCharacteristic.name), service name \(name), service uuid \(uuid)")
+                Logger.debug("Discovered characteristic uuid=\(cbCharacteristic.uuid.uuidString), characteristic name=\(bcCharacteristic.name), service name \(name), service uuid \(uuid)")
                 if let bcCharacteristics = discoveredCharacteristics[cbCharacteristic.uuid] {
                     discoveredCharacteristics[cbCharacteristic.uuid] = bcCharacteristics + [bcCharacteristic]
                 } else {
