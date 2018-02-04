@@ -282,6 +282,11 @@ public class Peripheral: NSObject, CBPeripheralDelegate {
             Logger.debug("peripheral not disconnected \(name), \(identifier.uuidString)")
             return
         }
+        guard !(cbPeripheral.delegate === self && cbPeripheral.state == .connected) else {
+            Logger.debug("cbPeripheral belongs to \(name), \(identifier.uuidString) and it's already connected")
+            return
+        }
+        cbPeripheral.delegate = self
         Logger.debug("reconnect peripheral name=\(name), uuid=\(identifier.uuidString)")
         func performConnection(_ peripheral: Peripheral) {
             centralManager.connect(cbPeripheral)
@@ -477,7 +482,15 @@ public class Peripheral: NSObject, CBPeripheralDelegate {
             _disconnectionCount += 1
             if let error = error {
                 Logger.debug("disconnecting with errors uuid=\(identifier.uuidString), name=\(self.name), error=\(error.localizedDescription), disconnection count=\(_disconnectionCount) ")
-                connectionPromise?.failure(error)
+                switch error {
+                case CBError.connectionTimeout:
+                    connectionPromise?.failure(PeripheralError.connectionTimeout)
+                case CBError.peripheralDisconnected:
+                    connectionPromise?.failure(PeripheralError.disconnected)
+                default:
+                    connectionPromise?.failure(error)
+                }
+
             } else  {
                 Logger.debug("disconnecting with no errors uuid=\(identifier.uuidString), name=\(self.name)")
                 self.connectionPromise?.failure(PeripheralError.disconnected)
