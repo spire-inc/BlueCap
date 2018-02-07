@@ -437,7 +437,7 @@ public class Peripheral: NSObject, CBPeripheralDelegate {
             bcCharacteristic.didUpdate(error)
             return
         }
-        Logger.debug("uuid=\(characteristic.uuid.uuidString), name=\(bcCharacteristic.name)")
+        //Logger.debug("uuid=\(characteristic.uuid.uuidString), name=\(bcCharacteristic.name)")
         bcCharacteristic.didUpdate(error)
     }
 
@@ -531,6 +531,7 @@ public class Peripheral: NSObject, CBPeripheralDelegate {
     }
     
     internal func discoverCharacteristics(_ characteristics: [CBUUID]?, forService service: CBServiceInjectable) {
+        cbPeripheral.delegate = self
         cbPeripheral.discoverCharacteristics(characteristics, forService: service)
     }
 
