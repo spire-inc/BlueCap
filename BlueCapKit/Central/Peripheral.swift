@@ -279,7 +279,7 @@ public class Peripheral: NSObject, CBPeripheralDelegate {
     }
 
     fileprivate func reconnectIfNotConnected(_ delay: Double = 0.0) {
-        guard let centralManager = centralManager else {
+        guard let centralManager = centralManager, state != .connected else {
             Logger.debug("peripheral not disconnected \(name), \(identifier.uuidString)")
             return
         }
