@@ -279,12 +279,19 @@ public class Peripheral: NSObject, CBPeripheralDelegate {
     }
 
     fileprivate func reconnectIfNotConnected(_ delay: Double = 0.0) {
-        guard let centralManager = centralManager, state != .connected else {
-            Logger.debug("peripheral not disconnected \(name), \(identifier.uuidString)")
+        guard let centralManager = centralManager else {
             return
         }
 
-        cbPeripheral.delegate = self
+        Logger.debug("peripheral state: \(self.state). ConnectionSequence: \(self.connectionSequence). cbPeripheral delegate is self: \(cbPeripheral.delegate === self)")
+
+        guard state != .connected || connectionSequence != 0 else {
+            Logger.debug("peripheral not disconnected \(name), \(identifier.uuidString)")
+            cbPeripheral.delegate = self
+            centralManager.connect(cbPeripheral)
+            return
+        }
+
         Logger.debug("reconnect peripheral name=\(name), uuid=\(identifier.uuidString)")
         func performConnection(_ peripheral: Peripheral) {
             centralManager.connect(cbPeripheral)
@@ -422,8 +429,8 @@ public class Peripheral: NSObject, CBPeripheralDelegate {
     internal func didUpdateNotificationStateForCharacteristic(_ characteristic: CBCharacteristicInjectable, error: Error?) {
         guard let bcCharacteristic = characteristicWithCBCharacteristic(characteristic) else {
             Logger.debug("didUpdateNotificationState error: characteristic not found uuid=\(characteristic.uuid.uuidString)")
-            let bcCharacteristic: Characteristic = restore(cbCharacteristic: characteristic)
-            bcCharacteristic.didUpdateNotificationState(error)
+            //let bcCharacteristic: Characteristic = restore(cbCharacteristic: characteristic)
+            //bcCharacteristic.didUpdateNotificationState(error)
             return
         }
         Logger.debug("uuid=\(characteristic.uuid.uuidString), name=\(bcCharacteristic.name)")
@@ -433,8 +440,8 @@ public class Peripheral: NSObject, CBPeripheralDelegate {
     internal func didUpdateValueForCharacteristic(_ characteristic: CBCharacteristicInjectable, error: Error?) {
         guard let bcCharacteristic = characteristicWithCBCharacteristic(characteristic) else {
             Logger.debug("\(self.identifier.uuidString) didUpdateValue error: characteristic not found uuid=\(characteristic.uuid.uuidString). Restoring.")
-            let bcCharacteristic: Characteristic = restore(cbCharacteristic: characteristic)
-            bcCharacteristic.didUpdate(error)
+            //let bcCharacteristic: Characteristic = restore(cbCharacteristic: characteristic)
+            //bcCharacteristic.didUpdate(error)
             return
         }
         //Logger.debug("uuid=\(characteristic.uuid.uuidString), name=\(bcCharacteristic.name)")
