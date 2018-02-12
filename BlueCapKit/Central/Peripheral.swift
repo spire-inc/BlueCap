@@ -283,12 +283,10 @@ public class Peripheral: NSObject, CBPeripheralDelegate {
             return
         }
 
-        Logger.debug("peripheral state: \(self.state). ConnectionSequence: \(self.connectionSequence). cbPeripheral delegate is self: \(cbPeripheral.delegate === self)")
+        Logger.debug("peripheral state: \(self.state.rawValue). ConnectionSequence: \(self.connectionSequence). cbPeripheral delegate is self: \(cbPeripheral.delegate === self)")
 
-        guard state != .connected || connectionSequence != 0 else {
+        guard state != .connected || connectionSequence == 0 else {
             Logger.debug("peripheral not disconnected \(name), \(identifier.uuidString)")
-            cbPeripheral.delegate = self
-            centralManager.connect(cbPeripheral)
             return
         }
 
@@ -439,7 +437,7 @@ public class Peripheral: NSObject, CBPeripheralDelegate {
     
     internal func didUpdateValueForCharacteristic(_ characteristic: CBCharacteristicInjectable, error: Error?) {
         guard let bcCharacteristic = characteristicWithCBCharacteristic(characteristic) else {
-            Logger.debug("\(self.identifier.uuidString) didUpdateValue error: characteristic not found uuid=\(characteristic.uuid.uuidString). Restoring.")
+            Logger.debug("\(self.identifier.uuidString) didUpdateValue error: characteristic not found uuid=\(characteristic.uuid.uuidString).")
             //let bcCharacteristic: Characteristic = restore(cbCharacteristic: characteristic)
             //bcCharacteristic.didUpdate(error)
             return
@@ -451,8 +449,8 @@ public class Peripheral: NSObject, CBPeripheralDelegate {
     internal func didWriteValueForCharacteristic(_ characteristic: CBCharacteristicInjectable, error: Error?) {
         guard let bcCharacteristic = characteristicWithCBCharacteristic(characteristic) else {
             Logger.debug("didWriteValue error: characteristic not found uuid=\(characteristic.uuid.uuidString)")
-            let bcCharacteristic: Characteristic = restore(cbCharacteristic: characteristic)
-            bcCharacteristic.didWrite(error)
+            //let bcCharacteristic: Characteristic = restore(cbCharacteristic: characteristic)
+            //bcCharacteristic.didWrite(error)
             return
         }
         Logger.debug("uuid=\(characteristic.uuid.uuidString), name=\(bcCharacteristic.name)")
