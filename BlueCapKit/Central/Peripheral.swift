@@ -16,8 +16,18 @@ enum PeripheralTerminationStatus {
 
 // MARK: - PeripheralAdvertisements -
 
-public struct PeripheralAdvertisements {
-    
+public struct PeripheralAdvertisements: Equatable {
+    public static func ==(lhs: PeripheralAdvertisements, rhs: PeripheralAdvertisements) -> Bool {
+        return lhs.localName == rhs.localName &&
+            lhs.manufacturerData == rhs.manufacturerData &&
+            lhs.txPower == rhs.txPower &&
+            lhs.isConnectable == rhs.isConnectable &&
+            lhs.serviceUUIDs ?? [CBUUID]() == rhs.serviceUUIDs ?? [CBUUID]() &&
+            lhs.serviceData ?? [CBUUID:Data]() == rhs.serviceData ?? [CBUUID:Data]() &&
+            lhs.overflowServiceUUIDs ?? [CBUUID]() == rhs.overflowServiceUUIDs ?? [CBUUID]() &&
+            lhs.solicitedServiceUUIDs ?? [CBUUID]() == rhs.solicitedServiceUUIDs ?? [CBUUID]()
+    }
+
     let advertisements: [String : Any]
     
     public var localName: String? {
@@ -93,7 +103,7 @@ public class Peripheral: NSObject, CBPeripheralDelegate {
     var discoveredServices = [CBUUID : [Service]]()
     var subscribedCharacteristics = [CBUUID: Characteristic]()
 
-    let cbPeripheral: CBPeripheralInjectable
+    var cbPeripheral: CBPeripheralInjectable
     
     public var corePeripheral: CBPeripheral {
         return self.cbPeripheral as! CBPeripheral
@@ -214,6 +224,17 @@ public class Peripheral: NSObject, CBPeripheralDelegate {
         }
     }
 
+    internal func merge(cbPeripheral: CBPeripheralInjectable, centralManager: CentralManager) {
+        if self.cbPeripheral !== cbPeripheral {
+            self.cbPeripheral = cbPeripheral
+            cbPeripheral.delegate = self
+        }
+
+        if self.centralManager !== centralManager {
+            self.centralManager = centralManager
+        }
+    }
+
     // MARK: RSSI
 
     public func readRSSI() -> Future<Int> {
@@ -289,6 +310,8 @@ public class Peripheral: NSObject, CBPeripheralDelegate {
             Logger.debug("peripheral not disconnected \(name), \(identifier.uuidString)")
             return
         }
+
+        cbPeripheral.delegate = self
 
         Logger.debug("reconnect peripheral name=\(name), uuid=\(identifier.uuidString)")
         func performConnection(_ peripheral: Peripheral) {
