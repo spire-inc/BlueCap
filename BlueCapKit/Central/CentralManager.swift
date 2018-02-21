@@ -349,10 +349,12 @@ public class CentralManager : NSObject, CBCentralManagerDelegate {
         Logger.debug("'\(name)'")
         if let cbPeripherals = cbPeripherals {
             cbPeripherals.forEach { cbPeripheral in
+                Logger.debug("Restoring CBPeripheral \(cbPeripheral.identifier.uuidString)")
                 let peripheral = Peripheral(cbPeripheral: cbPeripheral, centralManager: self)
                 _discoveredPeripherals[cbPeripheral.identifier] = peripheral
                 if let cbServices = cbPeripheral.getServices() {
                     for cbService in cbServices {
+                        Logger.debug("Restoring Service \(cbService.uuid.uuidString)")
                         let service = Service(cbService: cbService, peripheral: peripheral)
                         if let services = peripheral.discoveredServices[cbService.uuid] {
                             peripheral.discoveredServices[cbService.uuid] = services + [service]
@@ -361,6 +363,7 @@ public class CentralManager : NSObject, CBCentralManagerDelegate {
                         }
                         if let cbCharacteristics = cbService.getCharacteristics() {
                             for cbCharacteristic in cbCharacteristics {
+                                Logger.debug("Restoring Characteristic \(cbCharacteristic.uuid.uuidString)")
                                 let characteristic = Characteristic(cbCharacteristic: cbCharacteristic, service: service)
                                 if let characteristics = service.discoveredCharacteristics[cbCharacteristic.uuid] {
                                     service.discoveredCharacteristics[cbCharacteristic.uuid] = characteristics + [characteristic]
