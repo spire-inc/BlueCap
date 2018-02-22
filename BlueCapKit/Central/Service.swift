@@ -30,7 +30,7 @@ public class Service {
     }
     
     fileprivate(set) weak var profile: ServiceProfile?
-    fileprivate(set) weak var cbService: CBServiceInjectable?
+    public fileprivate(set) weak var cbService: CBServiceInjectable?
     public fileprivate(set) weak var peripheral: Peripheral?
 
     var centralQueue: Queue {

@@ -41,7 +41,7 @@ public class Characteristic : NSObject {
     var readPromises = [Promise<Void>]()
     var writePromises = [Promise<Void>]()
 
-    weak var cbCharacteristic: CBCharacteristicInjectable?
+    public weak var cbCharacteristic: CBCharacteristicInjectable?
 
     var centralQueue: Queue {
         return service!.centralQueue
@@ -289,10 +289,10 @@ public class Characteristic : NSObject {
     // MARK: CBPeripheralDelegate Shim
     internal func didUpdateNotificationState(_ error: Swift.Error?) {
         if let error = error {
-            Logger.debug("failed uuid=\(uuid.uuidString), name=\(self.name)")
+            Logger.debug("\(self.cbCharacteristic?.uuid.uuidString) didUpdateNotificationState failed: uuid=\(uuid.uuidString), name=\(self.name)")
             notificationStateChangedPromise?.failure(error)
         } else {
-            Logger.debug("success:  uuid=\(uuid.uuidString), name=\(self.name)")
+            Logger.debug("\(self.cbCharacteristic?.uuid.uuidString) didUpdateNotificationState success: uuid=\(uuid.uuidString), name=\(self.name)")
             notificationStateChangedPromise?.success(())
         }
     }

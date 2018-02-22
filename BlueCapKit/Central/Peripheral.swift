@@ -423,7 +423,7 @@ public class Peripheral: NSObject, CBPeripheralDelegate {
             Logger.debug("didUpdateNotificationState error: characteristic not found uuid=\(characteristic.uuid.uuidString)")
             return
         }
-        Logger.debug("uuid=\(characteristic.uuid.uuidString), name=\(bcCharacteristic.name)")
+        Logger.debug("\(self.identifier.uuidString) didUpdateNotificationState uuid=\(characteristic.uuid.uuidString), name=\(bcCharacteristic.name)")
         bcCharacteristic.didUpdateNotificationState(error)
     }
     

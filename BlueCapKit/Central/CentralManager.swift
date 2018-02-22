@@ -28,7 +28,7 @@ public class CentralManager : NSObject, CBCentralManagerDelegate {
     let centralQueue: Queue
     public var options: [String : Any]?
 
-    fileprivate(set) var cbCentralManager: CBCentralManagerInjectable!
+    public fileprivate(set) var cbCentralManager: CBCentralManagerInjectable!
 
     fileprivate var scanTimeoutSequence = 0
 
