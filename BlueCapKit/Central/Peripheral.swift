@@ -98,7 +98,7 @@ public class Peripheral: NSObject, CBPeripheralDelegate {
         return self.cbPeripheral as! CBPeripheral
     }
     
-    public private(set) var advertisements: PeripheralAdvertisements
+    public internal(set) var advertisements: PeripheralAdvertisements
     public let discoveredAt = Date()
 
     // MARK: Private Properties
@@ -421,6 +421,8 @@ public class Peripheral: NSObject, CBPeripheralDelegate {
     internal func didUpdateNotificationStateForCharacteristic(_ characteristic: CBCharacteristicInjectable, error: Error?) {
         guard let bcCharacteristic = characteristicWithCBCharacteristic(characteristic) else {
             Logger.debug("didUpdateNotificationState error: characteristic not found uuid=\(characteristic.uuid.uuidString)")
+            let bcCharacteristic: Characteristic = restore(cbCharacteristic: characteristic)
+            bcCharacteristic.didUpdateNotificationState(error)
             return
         }
         Logger.debug("\(self.identifier.uuidString) didUpdateNotificationState uuid=\(characteristic.uuid.uuidString), name=\(bcCharacteristic.name)")
@@ -429,7 +431,9 @@ public class Peripheral: NSObject, CBPeripheralDelegate {
     
     internal func didUpdateValueForCharacteristic(_ characteristic: CBCharacteristicInjectable, error: Error?) {
         guard let bcCharacteristic = characteristicWithCBCharacteristic(characteristic) else {
-            Logger.debug("\(self.identifier.uuidString) didUpdateValue error: characteristic not found uuid=\(characteristic.uuid.uuidString).")
+            Logger.debug("\(self.identifier.uuidString) didUpdateValue error: characteristic not found uuid=\(characteristic.uuid.uuidString). Restoring.")
+            let bcCharacteristic: Characteristic = restore(cbCharacteristic: characteristic)
+            bcCharacteristic.didUpdate(error)
             return
         }
         //Logger.debug("uuid=\(characteristic.uuid.uuidString), name=\(bcCharacteristic.name)")
@@ -439,6 +443,8 @@ public class Peripheral: NSObject, CBPeripheralDelegate {
     internal func didWriteValueForCharacteristic(_ characteristic: CBCharacteristicInjectable, error: Error?) {
         guard let bcCharacteristic = characteristicWithCBCharacteristic(characteristic) else {
             Logger.debug("didWriteValue error: characteristic not found uuid=\(characteristic.uuid.uuidString)")
+            let bcCharacteristic: Characteristic = restore(cbCharacteristic: characteristic)
+            bcCharacteristic.didWrite(error)
             return
         }
         Logger.debug("uuid=\(characteristic.uuid.uuidString), name=\(bcCharacteristic.name)")
@@ -520,6 +526,15 @@ public class Peripheral: NSObject, CBPeripheralDelegate {
     }
 
     // MARK: Utilities
+
+    private func restore(cbCharacteristic: CBCharacteristicInjectable) -> Characteristic {
+        let service = Service(cbService: cbCharacteristic.service, peripheral: self)
+        let characteristic = Characteristic(cbCharacteristic: cbCharacteristic, service: service)
+        service.discoveredCharacteristics[characteristic.uuid]?.append(characteristic)
+        //subscribedCharacteristics[characteristic.uuid] = characteristic
+        discoveredServices[service.uuid]?.append(service)
+        return characteristic
+    }
 
     fileprivate func serviceWithCBService(_ cbService: CBServiceInjectable) -> Service? {
         return Array(self.discoveredServices.values).flatMap { $0 }.filter { $0.cbService === cbService }.first
