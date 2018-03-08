@@ -25,6 +25,8 @@ public class CentralManager : NSObject, CBCentralManagerDelegate {
 
     fileprivate let profileManager: ProfileManager?
 
+    fileprivate var initState: Bool = false
+
     let centralQueue: Queue
     public var options: [String : Any]?
 
@@ -128,7 +130,9 @@ public class CentralManager : NSObject, CBCentralManagerDelegate {
     public func whenStateChanges() -> FutureStream<ManagerState> {
         return self.centralQueue.sync {
             self.afterStateChangedPromise = StreamPromise<ManagerState>()
-            self.afterStateChangedPromise?.success(self.cbCentralManager.managerState)
+            if self.initState {
+                self.afterStateChangedPromise?.success(self.cbCentralManager.managerState)
+            }
             return self.afterStateChangedPromise!.stream
         }
     }
@@ -386,8 +390,12 @@ public class CentralManager : NSObject, CBCentralManagerDelegate {
     }
 
     func didUpdateState(_ centralManager: CBCentralManagerInjectable) {
+        initState = true
         Logger.debug("'\(name)' did update state '\(centralManager.managerState)'")
-        afterStateChangedPromise?.success(centralManager.managerState)
+        if afterStateChangedPromise == nil {
+            afterStateChangedPromise = StreamPromise<ManagerState>()
+        }
+         afterStateChangedPromise?.success(centralManager.managerState)
     }
 
 }
