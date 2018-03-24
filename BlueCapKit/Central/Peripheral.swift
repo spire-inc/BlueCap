@@ -334,7 +334,7 @@ public class Peripheral: NSObject, CBPeripheralDelegate {
     }
     
     public func peripheral(_: CBPeripheral, didModifyServices invalidatedServices: [CBService]) {
-        Logger.debug()
+        Logger.debug("didModifyServices invalidatedServices: \(invalidatedServices as AnyObject)")
     }
 
     public func peripheral(_ peripheral: CBPeripheral, didReadRSSI RSSI: NSNumber, error: Error?) {

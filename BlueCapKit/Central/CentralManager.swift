@@ -183,6 +183,7 @@ public class CentralManager : NSObject, CBCentralManagerDelegate {
                 self.afterPeripheralDiscoveredPromise = StreamPromise<Peripheral>(capacity: capacity)
                 if self.poweredOn {
                     self.cbCentralManager.scanForPeripherals(withServices: uuids, options: options)
+                    self.scanTimeoutSequence+=1
                     self.timeoutScan(timeout, sequence: self.scanTimeoutSequence)
                 } else {
                     self.afterPeripheralDiscoveredPromise?.failure(CentralManagerError.isPoweredOff)
