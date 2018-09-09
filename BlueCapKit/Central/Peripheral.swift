@@ -256,15 +256,11 @@ public class Peripheral: NSObject, CBPeripheralDelegate {
     }
 
     public func connect(connectionTimeout: TimeInterval = TimeInterval.infinity, capacity: Int = Int.max) -> FutureStream<Void> {
-        if state == .connected && connectionPromise == nil {
-            disconnect()
-        }
-
         return centralQueue.sync {
             self.connectionPromise = StreamPromise<Void>(capacity: capacity)
             self.connectionTimeout = connectionTimeout
             Logger.debug("connect peripheral \(self.name)', \(self.identifier.uuidString)")
-            self.reconnectIfNotConnected()
+            self.reconnectIfNotConnected(force: true)
             return self.connectionPromise!.stream
         }
     }
@@ -281,8 +277,8 @@ public class Peripheral: NSObject, CBPeripheralDelegate {
         centralQueue.sync { self.forceDisconnect() }
     }
 
-    fileprivate func reconnectIfNotConnected(_ delay: Double = 0.0) {
-        guard let centralManager = centralManager, state != .connected  else {
+    fileprivate func reconnectIfNotConnected(_ delay: Double = 0.0, force: Bool = false) {
+        guard let centralManager = centralManager, (state != .connected || force)  else {
             Logger.debug("peripheral not disconnected \(name), \(identifier.uuidString)")
             return
         }
