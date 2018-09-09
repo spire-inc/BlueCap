@@ -17,40 +17,40 @@ enum PeripheralTerminationStatus {
 // MARK: - PeripheralAdvertisements -
 
 public struct PeripheralAdvertisements {
-    
+
     let advertisements: [String : Any]
-    
+
     public var localName: String? {
         return self.advertisements[CBAdvertisementDataLocalNameKey] as? String
     }
-    
+
     public var manufacturerData: Data? {
         return self.advertisements[CBAdvertisementDataManufacturerDataKey] as? Data
     }
-    
+
     public var txPower: NSNumber? {
         return self.advertisements[CBAdvertisementDataTxPowerLevelKey] as? NSNumber
     }
-    
+
     public var isConnectable: NSNumber? {
         return self.advertisements[CBAdvertisementDataIsConnectable] as? NSNumber
     }
-    
+
     public var serviceUUIDs: [CBUUID]? {
         return self.advertisements[CBAdvertisementDataServiceUUIDsKey] as? [CBUUID]
     }
-    
+
     public var serviceData: [CBUUID : Data]? {
         return self.advertisements[CBAdvertisementDataServiceDataKey] as? [CBUUID : Data]
     }
-    
+
     public var overflowServiceUUIDs: [CBUUID]? {
         return self.advertisements[CBAdvertisementDataOverflowServiceUUIDsKey] as? [CBUUID]
     }
-    
+
     public var solicitedServiceUUIDs: [CBUUID]? {
         return self.advertisements[CBAdvertisementDataSolicitedServiceUUIDsKey] as? [CBUUID]
-    }    
+    }
 }
 
 // MARK: - Peripheral -
@@ -93,11 +93,11 @@ public class Peripheral: NSObject, CBPeripheralDelegate {
     var discoveredServices = [CBUUID : [Service]]()
 
     let cbPeripheral: CBPeripheralInjectable
-    
+
     public var corePeripheral: CBPeripheral {
         return self.cbPeripheral as! CBPeripheral
     }
-    
+
     public internal(set) var advertisements: PeripheralAdvertisements
     public let discoveredAt = Date()
 
@@ -162,7 +162,7 @@ public class Peripheral: NSObject, CBPeripheralDelegate {
     public var services: [Service] {
         return centralQueue.sync  { return Array(self.discoveredServices.values).flatMap { $0 } }
     }
-    
+
     public var identifier: UUID {
         return cbPeripheral.identifier
     }
@@ -254,8 +254,12 @@ public class Peripheral: NSObject, CBPeripheralDelegate {
             self.reconnectIfNotConnected(delay)
         }
     }
-     
+
     public func connect(connectionTimeout: TimeInterval = TimeInterval.infinity, capacity: Int = Int.max) -> FutureStream<Void> {
+        if state == .connected && connectionPromise == nil {
+            disconnect()
+        }
+
         return centralQueue.sync {
             self.connectionPromise = StreamPromise<Void>(capacity: capacity)
             self.connectionTimeout = connectionTimeout
@@ -264,7 +268,7 @@ public class Peripheral: NSObject, CBPeripheralDelegate {
             return self.connectionPromise!.stream
         }
     }
-    
+
     public func terminate() {
         guard let centralManager = centralManager else {
             return
@@ -305,7 +309,7 @@ public class Peripheral: NSObject, CBPeripheralDelegate {
     }
 
     func cancelPeripheralConnection(withTerminationStatus terminationStatus: PeripheralTerminationStatus) {
-        guard let central = self.centralManager else {
+        guard let central = centralManager else {
             return
         }
         pollRSSIPromise = nil
@@ -326,13 +330,13 @@ public class Peripheral: NSObject, CBPeripheralDelegate {
         Logger.debug(" \(self.name)")
         return self.discoverIfConnected(services, timeout: timeout)
     }
-    
+
     // MARK: CBPeripheralDelegate
 
     public func peripheralDidUpdateName(_:CBPeripheral) {
         Logger.debug()
     }
-    
+
     public func peripheral(_: CBPeripheral, didModifyServices invalidatedServices: [CBService]) {
         Logger.debug("didModifyServices invalidatedServices: \(invalidatedServices as AnyObject)")
     }
@@ -347,11 +351,11 @@ public class Peripheral: NSObject, CBPeripheralDelegate {
         }
         didDiscoverServices(services, error: error)
     }
-    
+
     public func peripheral(_ peripheral: CBPeripheral, didDiscoverIncludedServicesFor service: CBService, error: Error?) {
         Logger.debug("peripheral name \(self.name)")
     }
-    
+
     public func peripheral(_ peripheral: CBPeripheral, didDiscoverCharacteristicsFor service: CBService, error: Error?) {
         guard let characteristics = service.getCharacteristics() else {
             return
@@ -374,11 +378,11 @@ public class Peripheral: NSObject, CBPeripheralDelegate {
     public func peripheral(_ peripheral: CBPeripheral, didDiscoverDescriptorsFor characteristic: CBCharacteristic, error: Error?) {
         Logger.debug()
     }
-    
+
     public func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor descriptor: CBDescriptor, error: Error?) {
         Logger.debug()
     }
-    
+
     public func peripheral(_ peripheral: CBPeripheral, didWriteValueFor descriptor: CBDescriptor, error: Error?) {
         Logger.debug()
     }
@@ -393,7 +397,7 @@ public class Peripheral: NSObject, CBPeripheralDelegate {
         Logger.debug("peripheral name=\(self.name), peripheral uuid=\(identifier.uuidString), service name \(bcService.name), characteristic count \(characteristics.count)")
         bcService.didDiscoverCharacteristics(characteristics, error: error)
     }
-    
+
     internal func didDiscoverServices(_ services: [CBServiceInjectable], error: Error?) {
         Logger.debug("peripheral name=\(self.name), peripheral uuid=\(identifier.uuidString), service count \(discoveredServices.count)")
         discoveredServices.removeAll()
@@ -413,11 +417,11 @@ public class Peripheral: NSObject, CBPeripheralDelegate {
                 }
             }
             if let servicesDiscoveredPromise = servicesDiscoveredPromise, !servicesDiscoveredPromise.completed {
-                 servicesDiscoveredPromise.success(())
+                servicesDiscoveredPromise.success(())
             }
         }
     }
-    
+
     internal func didUpdateNotificationStateForCharacteristic(_ characteristic: CBCharacteristicInjectable, error: Error?) {
         guard let bcCharacteristic = characteristicWithCBCharacteristic(characteristic) else {
             Logger.debug("didUpdateNotificationState error: characteristic not found uuid=\(characteristic.uuid.uuidString)")
@@ -428,7 +432,7 @@ public class Peripheral: NSObject, CBPeripheralDelegate {
         Logger.debug("\(self.identifier.uuidString) didUpdateNotificationState uuid=\(characteristic.uuid.uuidString), name=\(bcCharacteristic.name)")
         bcCharacteristic.didUpdateNotificationState(error)
     }
-    
+
     internal func didUpdateValueForCharacteristic(_ characteristic: CBCharacteristicInjectable, error: Error?) {
         guard let bcCharacteristic = characteristicWithCBCharacteristic(characteristic) else {
             Logger.debug("\(self.identifier.uuidString) didUpdateValue error: characteristic not found uuid=\(characteristic.uuid.uuidString). Restoring.")
@@ -512,15 +516,15 @@ public class Peripheral: NSObject, CBPeripheralDelegate {
     internal func setNotifyValue(_ state: Bool, forCharacteristic characteristic: CBCharacteristicInjectable) {
         cbPeripheral.setNotifyValue(state, forCharacteristic:characteristic)
     }
-    
+
     internal func readValueForCharacteristic(_ characteristic: CBCharacteristicInjectable) {
         cbPeripheral.readValueForCharacteristic(characteristic)
     }
-    
+
     internal func writeValue(_ value: Data, forCharacteristic characteristic: CBCharacteristicInjectable, type: CBCharacteristicWriteType = .withResponse) {
         cbPeripheral.writeValue(value, forCharacteristic:characteristic, type: type)
     }
-    
+
     internal func discoverCharacteristics(_ characteristics: [CBUUID]?, forService service: CBServiceInjectable) {
         cbPeripheral.discoverCharacteristics(characteristics, forService: service)
     }
