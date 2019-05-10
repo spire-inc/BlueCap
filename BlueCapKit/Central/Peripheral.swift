@@ -490,6 +490,7 @@ public class Peripheral: NSObject, CBPeripheralDelegate {
             Logger.debug("timeout connection uuid=\(identifier.uuidString), name=\(self.name), timeout count=\(_timeoutCount)")
             connectionPromise?.failure(PeripheralError.connectionTimeout)
         }
+        servicesDiscoveredPromise?.failure(PeripheralError.disconnected)
         for service in Array(discoveredServices.values).flatMap({ $0 }) {
             service.didDisconnectPeripheral(error)
         }
@@ -546,6 +547,7 @@ public class Peripheral: NSObject, CBPeripheralDelegate {
     fileprivate func discoverIfConnected(_ services: [CBUUID]?, timeout: TimeInterval = TimeInterval.infinity)  -> Future<Void> {
         return centralQueue.sync {
             if let servicesDiscoveredPromise = self.servicesDiscoveredPromise, !servicesDiscoveredPromise.completed {
+                Logger.debug("discover scan in progress")
                 return servicesDiscoveredPromise.future
             }
             self.servicesDiscoveredPromise = Promise<Void>()
