@@ -430,7 +430,6 @@ public class Peripheral: NSObject, CBPeripheralDelegate {
             Logger.debug("characteristic not found uuid=\(characteristic.uuid.uuidString)")
             return
         }
-        Logger.debug("uuid=\(characteristic.uuid.uuidString), name=\(bcCharacteristic.name)")
         bcCharacteristic.didUpdate(error)
     }
 
