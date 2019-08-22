@@ -490,7 +490,11 @@ public class Peripheral: NSObject, CBPeripheralDelegate {
             Logger.debug("timeout connection uuid=\(identifier.uuidString), name=\(self.name), timeout count=\(_timeoutCount)")
             connectionPromise?.failure(PeripheralError.connectionTimeout)
         }
-        servicesDiscoveredPromise?.failure(PeripheralError.disconnected)
+        
+        if let servicesDiscoveredPromise = self.servicesDiscoveredPromise, !servicesDiscoveredPromise.completed {
+            servicesDiscoveredPromise.failure(PeripheralError.disconnected)
+        }
+
         for service in Array(discoveredServices.values).flatMap({ $0 }) {
             service.didDisconnectPeripheral(error)
         }
