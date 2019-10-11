@@ -10,17 +10,15 @@ import Foundation
 
 public class Logger {
     
-    public static var debugLoggingEnabled = true
+    public static var loggingEnabled = false
     
     public class func debug(_ message:String? = nil, function: String = #function, file: String = #file, line: Int = #line) {
-        #if DEBUG
-        guard debugLoggingEnabled else { return }
+        guard loggingEnabled else { return }
         
         if let message = message {
             print("\(file):\(function):\(line): \(message)")
         } else {
             print("\(file):\(function):\(line)")
         }
-        #endif
     }
 }
